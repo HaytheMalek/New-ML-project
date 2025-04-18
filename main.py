@@ -37,6 +37,9 @@ def main(args):
 
     ## 2. Then we must prepare it. This is where you can create a validation set, normalize, add bias, etc.
     # Make a validation set (it can overwrite xtest, ytest)
+    fullxtrain = xtrain.copy()
+    fullytrain = ytrain.copy()
+
     if not args.test:
         ### WRITE YOUR CODE HERE
         validation_size = int(0.2 * len(xtrain))  # 20% of the data
@@ -54,16 +57,71 @@ def main(args):
     mean_val = np.mean(xtrain, axis=0, keepdims=True)
     std_val = np.std(xtrain, axis=0, keepdims=True)
 
-    normalizedXtrain = (xtrain - mean_val) / std_val
+    normalizedXtrain = normalize_fn(xtrain, mean_val, std_val)
     xtrain = normalizedXtrain
 
     mean_val2 = np.mean(xtest, axis=0, keepdims=True)
-    std_val2 = np.std(xtrain, axis=0, keepdims=True)
+    std_val2 = np.std(xtest, axis=0, keepdims=True)
 
-    normalizedXtest = (xtest - mean_val2) / std_val2
+    normalizedXtest = normalize_fn(xtest, mean_val2, std_val2)
     xtest = normalizedXtest
 
+    mean_val3 = np.mean(fullxtrain, axis=0, keepdims=True)
+    std_val3 = np.mean(fullxtrain, axis=0, keepdims=True)
+
+    fullxtrain = normalize_fn(fullxtrain, mean_val3, std_val3)
+
     ## 3. Initialize the method you want to use.
+    def KFold_cross_validation_KNN(xtrain, ytrain, candidate_ks, K=5):
+        """
+        Searches for the best k using K-fold cross-validation.
+
+        Inputs:
+            xtrain (np.array): training features, shape (N, D)
+            ytrain (np.array): training labels, shape (N,)
+            candidate_ks (list): list of k values to try
+            K (int): number of folds for cross-validation
+
+        Returns:
+            best_k (int): k with highest average validation accuracy
+        """
+        N = xtrain.shape[0]
+        all_indices = np.arange(N)
+        split_size = N // K
+
+        best_k = None
+        best_avg_acc = 0
+
+        for k in candidate_ks:
+            accuracies = []
+
+            for fold in range(K):
+                val_start = fold * split_size
+                val_end = (fold + 1) * split_size
+                val_indices = all_indices[val_start:val_end]
+                train_indices = np.setdiff1d(all_indices, val_indices)
+
+                X_train_fold = xtrain[train_indices]
+                Y_train_fold = ytrain[train_indices]
+                X_val_fold = xtrain[val_indices]
+                Y_val_fold = ytrain[val_indices]
+
+                knn = KNN(k=k)
+                knn.fit(X_train_fold, Y_train_fold)
+                Y_val_pred = knn.predict(X_val_fold)
+
+                acc = np.mean(Y_val_pred == Y_val_fold)
+                accuracies.append(acc)
+
+            avg_acc = np.mean(accuracies)
+            print(f"k = {k}, average validation accuracy = {avg_acc:.4f}")
+
+            if avg_acc > best_avg_acc:
+                best_avg_acc = avg_acc
+                best_k = k
+
+        print(f"Best k selected by CV: {best_k} (avg val acc = {best_avg_acc:.4f})")
+        return best_k
 
     # Use NN (FOR MS2!)
     if args.method == "nn":
@@ -74,8 +132,10 @@ def main(args):
         method_obj = DummyClassifier(arg1=1, arg2=2)
 
     if args.method == "knn":
-        method_obj = KNN(k=8)
-
+        candidate_ks = [1, 3, 5, 7, 9]
+        best_k = KFold_cross_validation_KNN(fullxtrain, fullytrain, candidate_ks, K=5)
+        method_obj = KNN(k=best_k)
+        
     if args.method == "logistic_regression":
         method_obj = LogisticRegression()
 

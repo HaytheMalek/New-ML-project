@@ -12,6 +12,7 @@ def euclidean_dist(example, training_examples):
     """
     # WRITE YOUR CODE HERE
     return np.sqrt(np.sum((example - training_examples) ** 2, axis=1))
+
 def find_k_nearest_neighbors(k, distances):
     """ Find the indices of the k smallest distances from a list of distances.
         Tip: use np.argsort()
