@@ -39,9 +39,29 @@ def main(args):
     # Make a validation set (it can overwrite xtest, ytest)
     if not args.test:
         ### WRITE YOUR CODE HERE
-        pass
+        validation_size = int(0.2 * len(xtrain))  # 20% of the data
+
+        # Create validation set from the end of the training set
+        xtest = xtrain[-validation_size:]
+        ytest = ytrain[-validation_size:]
+
+        # Remaining 80% goes to the training set
+        xtrain = xtrain[:-validation_size]
+        ytrain = ytrain[:-validation_size]
+
 
     ### WRITE YOUR CODE HERE to do any other data processing
+    mean_val = np.mean(xtrain, axis=0, keepdims=True)
+    std_val = np.std(xtrain, axis=0, keepdims=True)
+
+    normalizedXtrain = (xtrain - mean_val) / std_val
+    xtrain = normalizedXtrain
+
+    mean_val2 = np.mean(xtest, axis=0, keepdims=True)
+    std_val2 = np.std(xtrain, axis=0, keepdims=True)
+
+    normalizedXtest = (xtest - mean_val2) / std_val2
+    xtest = normalizedXtest
 
     ## 3. Initialize the method you want to use.
 
@@ -52,6 +72,12 @@ def main(args):
     # Follow the "DummyClassifier" example for your methods
     if args.method == "dummy_classifier":
         method_obj = DummyClassifier(arg1=1, arg2=2)
+
+    if args.method == "knn":
+        method_obj = KNN(k=8)
+
+    if args.method == "logistic_regression":
+        method_obj = LogisticRegression()
 
     elif ...:  ### WRITE YOUR CODE HERE
         pass
