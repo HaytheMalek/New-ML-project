@@ -1,5 +1,4 @@
 import numpy as np
-from ..utils import get_n_classes, label_to_onehot, onehot_to_label
 from src import utils
 
 def f_softmax(data, W):
@@ -132,21 +131,17 @@ class LogisticRegression(object):
 
         accuracies = []
         for fold in range(k_folds):
-            # Define validation fold
             val_start = fold * split_size
             val_end = (fold + 1) * split_size
             val_indices = all_indices[val_start:val_end]
 
-            # Training indices are everything except the validation indices
             train_indices = np.setdiff1d(all_indices, val_indices)
 
-            # Split data into training and validation sets
             X_train_fold = data[train_indices]
             Y_train_fold = labels[train_indices]
             X_val_fold = data[val_indices]
             Y_val_fold = labels[val_indices]
 
-            # Train model and evaluate on validation fold
             self.fit(X_train_fold, Y_train_fold, lr=self.lr)
             Y_val_pred = self.predict(X_val_fold)
             acc = np.mean(Y_val_pred == Y_val_fold)
@@ -183,7 +178,6 @@ class LogisticRegression(object):
                 self.max_iters = max_iters
                 hyperparam_pairs.append((lr, max_iters))
 
-                # Evaluate using cross-validation
                 avg_acc = self.cross_validate(data, labels, k_folds)
                 accuracies.append(avg_acc)
 
