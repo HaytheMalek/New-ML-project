@@ -161,7 +161,5 @@ class LogisticRegression(object):
         for pair, acc in zip(hyperparam_pairs, accuracies):
             print(f"Pair: {pair}, Accuracy: {acc:.4f}")
 
-        best_idx = np.argmax(accuracies)
-        print(f"\nBest idx: {best_idx}, Best pair from hyperparam_pairs: {hyperparam_pairs[best_idx]}, Best accuracy: {best_accuracy:.4f}")
         print(f"Best hyperparameters: lr = {best_lr}, max_iters = {best_max_iters} (avg val acc = {best_accuracy:.4f})")
         return best_lr, best_max_iters, accuracies, hyperparam_pairs
