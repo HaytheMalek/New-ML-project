@@ -43,13 +43,11 @@ def main(args):
 
     if not args.test:
         ### WRITE YOUR CODE HERE
-        validation_size = int(0.2 * len(xtrain))  # 20% of the data
+        validation_size = int(0.2 * len(xtrain))
 
-        # Create validation set from the end of the training set
         xtest = xtrain[-validation_size:]
         ytest = ytrain[-validation_size:]
 
-        # Remaining 80% goes to the training set
         xtrain = xtrain[:-validation_size]
         ytrain = ytrain[:-validation_size]
 
@@ -70,70 +68,7 @@ def main(args):
     fullxtrain = normalize_fn(fullxtrain, mean_val3, std_val3)
 
     ## 3. Initialize the method you want to use.
-    def KFold_cross_validation_KNN(xtrain, ytrain, candidate_ks, K=5):
-        """
-        Searches for the best k using K-fold cross-validation.
 
-        Inputs:
-            xtrain (np.array): training features, shape (N, D)
-            ytrain (np.array): training labels, shape (N,)
-            candidate_ks (list): list of k values to try
-            K (int): number of folds for cross-validation
-
-        Returns:
-            best_k (int): k with highest average validation accuracy
-        """
-        N = xtrain.shape[0]
-        all_indices = np.arange(N)
-        split_size = N // K
-
-        best_k = None
-        best_avg_acc = 0
-
-        acc_per_k = []
-        f1_per_k = []
-
-        for k in candidate_ks:
-            accuracies = []
-            f1s = []
-
-            for fold in range(K):
-                val_start = fold * split_size
-                val_end = (fold + 1) * split_size
-                val_indices = all_indices[val_start:val_end]
-                train_indices = np.setdiff1d(all_indices, val_indices)
-
-                X_train_fold = xtrain[train_indices]
-                Y_train_fold = ytrain[train_indices]
-                X_val_fold = xtrain[val_indices]
-                Y_val_fold = ytrain[val_indices]
-
-                knn = KNN(k=k)
-                knn.fit(X_train_fold, Y_train_fold)
-                Y_val_pred = knn.predict(X_val_fold)
-
-                acc = np.mean(Y_val_pred == Y_val_fold)
-                f1 = macrof1_fn(Y_val_pred, Y_val_fold)
-                
-                accuracies.append(acc)
-                f1s.append(f1)
-
-
-            avg_acc = np.mean(accuracies)
-            avg_f1 = np.mean(f1s)
-            
-            acc_per_k.append(avg_acc)
-
-            f1_per_k.append(avg_f1)
-            print(f"k = {k}, average validation accuracy = {avg_acc:.4f}")
-
-            if avg_acc > best_avg_acc:
-                best_avg_acc = avg_acc
-                best_k = k
-
-        print(f"Best k selected by CV: {best_k} (avg val acc = {best_avg_acc:.4f})")
-        return best_k, acc_per_k, f1_per_k
-    
     def plot_f1_and_accuracy_vs_k(ks, f1_scores, accuracies):
         """
         Plots F1-score and accuracy as functions of k in a single elegant plot.
@@ -146,11 +81,9 @@ def main(args):
         """
         plt.figure(figsize=(8, 6))
 
-        # Plot F1 and Accuracy
         plt.plot(ks, f1_scores, marker='o', linestyle='-', color='royalblue', label='F1 Score')
         plt.plot(ks, accuracies, marker='s', linestyle='--', color='darkorange', label='Accuracy')
 
-        # Find and highlight best accuracy
         best_k_idx = np.argmax(accuracies)
         best_k = ks[best_k_idx]
         best_acc = accuracies[best_k_idx]
@@ -162,7 +95,6 @@ def main(args):
                     arrowprops=dict(facecolor='gray', arrowstyle='->'),
                     fontsize=10)
 
-        # Aesthetics
         plt.title('F1 Score and Accuracy vs. k (KNN)', fontsize=14)
         plt.xlabel('k (Number of Neighbors)', fontsize=12)
         plt.ylabel('Score', fontsize=12)
@@ -192,16 +124,13 @@ def main(args):
             acc_for_max_iters = []
             current_lrs = []
             for lr in unique_lrs:
-                try:
-                    idx = hyperparam_pairs.index((lr, max_iters))
-                    acc_for_max_iters.append(accuracies[idx])
-                    current_lrs.append(lr)
-                except ValueError:
-                    continue  # In case this pair is missing
+                idx = hyperparam_pairs.index((lr, max_iters))
+                acc_for_max_iters.append(accuracies[idx])
+                current_lrs.append(lr)
+
             if current_lrs:
                 plt.plot(current_lrs, acc_for_max_iters, marker='o', linestyle='-', label=f'max_iters={max_iters}')
 
-        # Highlight the best accuracy
         best_idx = np.argmax(accuracies)
         best_lr, best_max_iters = hyperparam_pairs[best_idx]
         best_acc = accuracies[best_idx]
@@ -214,7 +143,6 @@ def main(args):
                     arrowprops=dict(facecolor='gray', arrowstyle='->'),
                     fontsize=10)
 
-        # Aesthetics
         plt.title('Accuracy vs. Learning Rate (Logistic Regression)', fontsize=14)
         plt.xlabel('Learning Rate (lr)', fontsize=12)
         plt.ylabel('Accuracy', fontsize=12)
@@ -233,33 +161,30 @@ def main(args):
         method_obj = DummyClassifier(arg1=1, arg2=2)
 
     if args.method == "knn":
+        method_obj = KNN()
         candidate_ks = list(range(1, 31))
-        best_k, acc_per_k, f1_per_k = KFold_cross_validation_KNN(fullxtrain, fullytrain, candidate_ks, K=5)
+        best_k, acc_per_k, f1_per_k = method_obj.KFold_cross_validation_KNN(fullxtrain, fullytrain, candidate_ks, K=5)
         plot_f1_and_accuracy_vs_k(candidate_ks, f1_per_k, acc_per_k)
-        method_obj = KNN(best_k)
+        method_obj.k = best_k
         
     if args.method == "logistic_regression":
         xtrain = append_bias_term(xtrain)
         xtest = append_bias_term(xtest)
         method_obj = LogisticRegression()
 
-        # Define hyperparameter ranges to test
+        #hyperparameter ranges to test
         lr_values = [1e-5, 1e-4, 1e-3, 1e-2]
         max_iters_values = [50, 100, 200, 500]
 
-        # Tune hyperparameters using k-fold cross-validation
         best_lr, best_max_iters, accuracies, hyperparam_pairs = method_obj.tune_hyperparameters(
             fullxtrain, fullytrain, lr_values, max_iters_values, k_folds=5
         )
 
-        # Extract lr and max_iters for plotting
         lrs = [pair[0] for pair in hyperparam_pairs]
         max_iters = [pair[1] for pair in hyperparam_pairs]
 
-        # Plot the accuracy graph
         plot_accuracy_vs_hyperparams(lrs, max_iters, accuracies, hyperparam_pairs)
 
-        # Train the model with the best hyperparameters
         method_obj.lr = best_lr
         method_obj.max_iters = best_max_iters
 

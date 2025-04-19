@@ -89,7 +89,6 @@ class LogisticRegression(object):
         """
         D = data.shape[1]
         C = 5
-        # Set a random seed for reproducibility
         np.random.seed(42)
         self.weights = np.random.normal(0, 0.1, (D, C))
 
@@ -116,22 +115,38 @@ class LogisticRegression(object):
         return predictions.astype(int)
 
     def cross_validate(self, data, labels, k_folds):
+        """
+        Perform k-fold cross-validation on the dataset.
+
+        Parameters:
+            data (np.ndarray): Input feature matrix of shape (N, D)
+            labels (np.ndarray): Target labels of shape (N,)
+            k_folds (int): Number of folds to split the data into
+
+        Returns:
+            float: Average validation accuracy over all folds
+        """
         N = data.shape[0]
         all_indices = np.arange(N)
         split_size = N // k_folds
 
         accuracies = []
         for fold in range(k_folds):
+            # Define validation fold
             val_start = fold * split_size
             val_end = (fold + 1) * split_size
             val_indices = all_indices[val_start:val_end]
+
+            # Training indices are everything except the validation indices
             train_indices = np.setdiff1d(all_indices, val_indices)
 
+            # Split data into training and validation sets
             X_train_fold = data[train_indices]
             Y_train_fold = labels[train_indices]
             X_val_fold = data[val_indices]
             Y_val_fold = labels[val_indices]
 
+            # Train model and evaluate on validation fold
             self.fit(X_train_fold, Y_train_fold, lr=self.lr)
             Y_val_pred = self.predict(X_val_fold)
             acc = np.mean(Y_val_pred == Y_val_fold)
@@ -140,6 +155,23 @@ class LogisticRegression(object):
         return np.mean(accuracies)
 
     def tune_hyperparameters(self, data, labels, lr_values, max_iters_values, k_folds=5):
+        """
+        Tune learning rate and maximum number of iterations using grid search with cross-validation.
+
+        Parameters:
+            data (np.ndarray): Feature matrix
+            labels (np.ndarray): Labels vector
+            lr_values (list): List of candidate learning rates
+            max_iters_values (list): List of candidate max iteration values
+            k_folds (int): Number of cross-validation folds (default: 5)
+
+        Returns:
+            tuple: (best_lr, best_max_iters, accuracies, hyperparam_pairs)
+                - best_lr (float): Best learning rate
+                - best_max_iters (int): Best number of iterations
+                - accuracies (list): List of average accuracies for each hyperparameter pair
+                - hyperparam_pairs (list): List of tested (lr, max_iters) pairs
+        """
         accuracies = []
         best_lr, best_max_iters = None, None
         best_accuracy = 0
@@ -150,16 +182,16 @@ class LogisticRegression(object):
                 self.lr = lr
                 self.max_iters = max_iters
                 hyperparam_pairs.append((lr, max_iters))
+
+                # Evaluate using cross-validation
                 avg_acc = self.cross_validate(data, labels, k_folds)
                 accuracies.append(avg_acc)
+
                 print(f"lr = {lr}, max_iters = {max_iters}, avg val accuracy = {avg_acc:.4f}")
+
                 if avg_acc > best_accuracy:
                     best_accuracy = avg_acc
                     best_lr, best_max_iters = lr, max_iters
-
-        print("\nHyperparameter pairs and accuracies:")
-        for pair, acc in zip(hyperparam_pairs, accuracies):
-            print(f"Pair: {pair}, Accuracy: {acc:.4f}")
 
         print(f"Best hyperparameters: lr = {best_lr}, max_iters = {best_max_iters} (avg val acc = {best_accuracy:.4f})")
         return best_lr, best_max_iters, accuracies, hyperparam_pairs

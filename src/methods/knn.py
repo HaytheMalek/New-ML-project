@@ -1,4 +1,6 @@
 import numpy as np
+from ..utils import macrof1_fn
+
 
 def euclidean_dist(example, training_examples):
     """Compute the Euclidean distance between a single example
@@ -90,3 +92,67 @@ class KNN(object):
             test_labels[i] = predict_label(neighbor_labels)
 
         return test_labels
+    
+    def KFold_cross_validation_KNN(self, xtrain, ytrain, candidate_ks, K):
+        """
+        Searches for the best k using K-fold cross-validation.
+
+        Inputs:
+            xtrain (np.array): training features, shape (N, D)
+            ytrain (np.array): training labels, shape (N,)
+            candidate_ks (list): list of k values to try
+            K (int): number of folds for cross-validation
+
+        Returns:
+            best_k (int): k with highest average validation accuracy
+        """
+        N = xtrain.shape[0]
+        all_indices = np.arange(N)
+        split_size = N // K
+
+        best_k = None
+        best_avg_acc = 0
+
+        acc_per_k = []
+        f1_per_k = []
+
+        for k in candidate_ks:
+            accuracies = []
+            f1s = []
+
+            for fold in range(K):
+                val_start = fold * split_size
+                val_end = (fold + 1) * split_size
+                val_indices = all_indices[val_start:val_end]
+                train_indices = np.setdiff1d(all_indices, val_indices)
+
+                X_train_fold = xtrain[train_indices]
+                Y_train_fold = ytrain[train_indices]
+                X_val_fold = xtrain[val_indices]
+                Y_val_fold = ytrain[val_indices]
+
+                knn = KNN(k=k)
+                knn.fit(X_train_fold, Y_train_fold)
+                Y_val_pred = knn.predict(X_val_fold)
+
+                acc = np.mean(Y_val_pred == Y_val_fold)
+                f1 = macrof1_fn(Y_val_pred, Y_val_fold)
+                
+                accuracies.append(acc)
+                f1s.append(f1)
+
+
+            avg_acc = np.mean(accuracies)
+            avg_f1 = np.mean(f1s)
+            
+            acc_per_k.append(avg_acc)
+
+            f1_per_k.append(avg_f1)
+            print(f"k = {k}, average validation accuracy = {avg_acc:.4f}")
+
+            if avg_acc > best_avg_acc:
+                best_avg_acc = avg_acc
+                best_k = k
+
+        print(f"Best k selected by CV: {best_k} (avg val acc = {best_avg_acc:.4f})")
+        return best_k, acc_per_k, f1_per_k
