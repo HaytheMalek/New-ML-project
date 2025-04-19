@@ -1,5 +1,6 @@
 import numpy as np
 from src import utils
+from ..utils import label_to_onehot
 
 def f_softmax(data, W):
     """
@@ -92,7 +93,8 @@ class LogisticRegression(object):
         self.weights = np.random.normal(0, 0.1, (D, C))
 
         for it in range(self.max_iters):
-            gradient = gradient_logistic_multi(data, utils.label_to_onehot(labels), self.weights)
+            onehot_labels = label_to_onehot(labels, C)
+            gradient = gradient_logistic_multi(data, onehot_labels, self.weights)
             self.weights = self.weights - gradient * lr
             predictions = self.predict(data)
             if utils.accuracy_fn(predictions, labels) == 100:
