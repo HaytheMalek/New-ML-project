@@ -2,6 +2,9 @@ import numpy as np
 
 class KMeans(object):
     def __init__(self, max_iters=500):
+        """
+         Call set_arguments function of this class.
+         """
         self.max_iters = max_iters
         self.centroids = None
         self.cluster_assignments = None
@@ -29,9 +32,21 @@ class KMeans(object):
                 centers[k] = cluster_data[np.argmax(distances)]
         return centers
 
-    def fit(self, training_data, K):
+    def fit(self, training_data, training_labels):
+        """
+         Trains the model, returns predicted labels for training data.
+         Hint:
+             (1) Since Kmeans is unsupervised clustering, we don't need the labels for training. But you may want to use it to determine the number of clusters.
+             (2) Kmeans is sensitive to initialization. You can try multiple random initializations when using this classifier.
+ 
+         Arguments:
+             training_data (np.array): training data of shape (N,D)
+             training_labels (np.array): labels of shape (N,).
+         Returns:
+             pred_labels (np.array): labels of shape (N,)
+        """
         # k-means initialization
-        K = 5
+        K = int(np.max(training_labels) + 1)
         self.centroids = [training_data[np.random.choice(training_data.shape[0])]]
         for i in range(1, K):
             distances = self.compute_distance(training_data, np.array(self.centroids))
@@ -51,8 +66,18 @@ class KMeans(object):
             if np.allclose(old_centroids, self.centroids):
                 print(f"Converged after {i+1} iterations")
                 break
-        return self.predict(training_data)
+        
+        pred_labels = self.predict(training_data)
+        return pred_labels
 
     def predict(self, test_data):
+        """
+         Runs prediction on the test data.
+ 
+         Arguments:
+             test_data (np.array): test data of shape (N,D)
+         Returns:
+             test_labels (np.array): labels of shape (N,)
+        """
         distances = self.compute_distance(test_data, self.centroids)
         return self.find_closest_cluster(distances)
