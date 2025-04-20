@@ -1,9 +1,8 @@
 import numpy as np
 
 class KMeans(object):
-    def __init__(self, max_iters=500, tol=1e-4):
+    def __init__(self, max_iters=500):
         self.max_iters = max_iters
-        self.tol = tol
         self.centroids = None
         self.cluster_assignments = None
 
@@ -49,7 +48,7 @@ class KMeans(object):
             self.centroids = self.compute_centers(training_data, self.cluster_assignments, K, old_centroids)
             
             # Check convergence
-            if np.max(np.linalg.norm(old_centroids - self.centroids, axis=1)) < self.tol:
+            if np.allclose(old_centroids, self.centroids):
                 print(f"Converged after {i+1} iterations")
                 break
         return self.predict(training_data)
