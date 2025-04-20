@@ -167,6 +167,11 @@ def main(args):
         plot_f1_and_accuracy_vs_k(candidate_ks, f1_per_k, acc_per_k)
         method_obj.k = best_k
         
+    if args.method == "kmeans":
+        xtrain = append_bias_term(xtrain)
+        xtest = append_bias_term(xtest)
+        method_obj = KMeans()
+        
     if args.method == "logistic_regression":
         xtrain = append_bias_term(xtrain)
         xtest = append_bias_term(xtest)
