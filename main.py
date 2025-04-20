@@ -79,6 +79,9 @@ def main(args):
     if args.method == "logistic_regression":
         method_obj = LogisticRegression()
 
+    if args.method == "kmeans":
+        method_obj = KMeans()
+
     elif ...:  ### WRITE YOUR CODE HERE
         pass
 
